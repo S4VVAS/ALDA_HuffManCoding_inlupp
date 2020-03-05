@@ -1,5 +1,3 @@
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -19,8 +17,6 @@ public class HuffManEncoder {
 		}
 
 		PriorityQueue<TreeNode> prio = new PriorityQueue<TreeNode>();
-		// We save the leaves to have a quick refrence to them, when creating the
-		// encoding table
 		Hashtable<Character, TreeNode> leaves = new Hashtable<Character, TreeNode>();
 
 		// Populate priorityQueue with TreeNode Leafs
@@ -30,7 +26,7 @@ public class HuffManEncoder {
 			leaves.put(currEnt.getKey(), newNode);
 			prio.add(newNode);
 		}
-
+		
 		// Populate tree nodes with queue and leave root of tree on queue
 		for (TreeNode zero, one; prio.size() > 1;) {
 			zero = prio.poll();
@@ -40,44 +36,46 @@ public class HuffManEncoder {
 			zero.parent = newNode;
 			one.parent = newNode;
 		}
-
-		// Send root of tree and message to be converted into a encoded message
-		return createEncodedMessage(prio.poll(), msg, leaves);
+		return createEncodedMessage(msg, leaves);
 	}
 
-	private Message createEncodedMessage(TreeNode root, String msg, Hashtable<Character, TreeNode> leaves) {
-		Hashtable<Byte, Character> decodingTable = new Hashtable<Byte, Character>();
-		Hashtable<Character, Byte> encTable = new Hashtable<Character, Byte>();
-
-		for (int i = 0; i < msg.length(); i++) { // Creates encoding table for the message // CHANGE THIS TO BE THE LEAVES NOT THE MESSAGE, AS IT CREATES MULTIPLE ENTRIES IN HASHTABLE / REPLACES A BUNCH PROBS!
-			TreeNode currChar = leaves.get(msg.charAt(i));
-			byte enc = 0;
-			for (TreeNode currNode = currChar, prevNode = currNode; currNode != root;) {
+	private Message createEncodedMessage(String msg, Hashtable<Character, TreeNode> leaves) {
+		Hashtable<String, Character> decodingTable = new Hashtable<String, Character>();
+		Hashtable<Character, String> encodingTable = new Hashtable<Character, String>();
+		
+		//Creates encoding table for all the leaves/ characters in the tree
+		for (Iterator<Entry<Character, TreeNode>> it = leaves.entrySet().iterator(); it.hasNext();) {
+			Entry<Character, TreeNode> ent = it.next();
+			StringBuilder currentPath = new StringBuilder();
+			for(TreeNode currNode = ent.getValue(), prevNode = currNode; currNode.parent != null;) {
 				currNode = currNode.parent;
-				enc = (byte) ((enc << 1) | (currNode.children[0] == prevNode ? 0 : 1));
+				currentPath.insert(0, (currNode.children[0] == prevNode ? 0 : 1));
 				prevNode = currNode;
 			}
-			System.out.println(enc);
-			encTable.put(currChar.data, enc);
-			decodingTable.put(enc, currChar.data);
+			encodingTable.put(ent.getKey(), currentPath.toString());
+			decodingTable.put(currentPath.toString(), ent.getKey());
 		}
 
-		StringBuilder builder = new StringBuilder(); // String builder to create a string with the encoded data
-		for (int i = 0; i < msg.length(); i++) {
-			builder.append(Integer.toBinaryString(encTable.get(msg.charAt(i))  & 0xFF));
-		}
-
-		return new Message(decodingTable, builder.toString());
-
+		StringBuilder encodedData = new StringBuilder(); // String builder to create a string with the encoded data
+		//Creates the bit string of all paths of all the letters in message (Encodes message)
+		for (int i = 0; i < msg.length(); i++) 
+			encodedData.append(encodingTable.get(msg.charAt(i)));
+		return new Message(decodingTable, encodedData.toString());
 	}
 
 	public String decodeMessage(Message msg) {
-
-		return null;
+	
+		StringBuilder decodedData = new StringBuilder();
+		
+		StringBuilder bits = new StringBuilder();
+		for(int i = 0; i < msg.data.length(); i++){
+			bits.append(msg.data.charAt(i));
+			if(msg.encTable.containsKey(bits.toString())) {
+				decodedData.append(msg.encTable.get(bits.toString()));
+				bits = new StringBuilder();
+			}
+		}
+		return decodedData.toString();
 	}
-
-	private boolean isLeaf(TreeNode node) {
-		return node.data != '\u0000' && node.children == null;
-	}
-
+	
 }
