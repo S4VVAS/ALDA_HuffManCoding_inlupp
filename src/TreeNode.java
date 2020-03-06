@@ -17,9 +17,4 @@ public class TreeNode implements Comparable<TreeNode> {
 		return Integer.compare(freq, otherNode.freq);
 	}
 
-	@Override
-	public String toString() {
-		return data + "";
-	}
-
 }
