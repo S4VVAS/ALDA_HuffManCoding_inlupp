@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.util.Hashtable;
 
-public class Message {
+public class Message implements Serializable {
 	public final Hashtable<String, Character> encTable;
 	public final String data;
 	
